@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plagiste Pro 35h</title>
+<style>
+body{font-family:Arial;padding:20px;max-width:500px;margin:auto}
+button{padding:10px;margin:5px}
+input{width:80px}
+</style>
+</head>
+<body>
+
+<h2>⛱️ Plagiste Pro (35h/semaine)</h2>
+
+<label>💰 Taux horaire (€)</label>
+<input id="rate" type="number" value="0"><br><br>
+
+<button onclick="start()">START</button>
+<button onclick="stop()">STOP</button>
+
+<h3 id="total"></h3>
+<ul id="list"></ul>
+
+<script>
+let startTime=null;
+let sessions=JSON.parse(localStorage.getItem('s')||'[]');
+
+function save(){
+localStorage.setItem('s',JSON.stringify(sessions));
+}
+
+function week(d){
+let date=new Date(d);
+let onejan=new Date(date.getFullYear(),0,1);
+return Math.ceil((((date-onejan)/86400000)+onejan.getDay()+1)/7);
+}
+
+function start(){
+if(new Date().getDay()===3){alert("Mercredi off");return;}
+startTime=new Date();
+}
+
+function stop(){
+if(!startTime)return;
+
+let rate=parseFloat(document.getElementById('rate').value||0);
+let end=new Date();
+let h=(end-startTime)/3600000;
+
+sessions.unshift({
+d:end,
+h:h,
+e:h*rate,
+start:startTime.toLocaleTimeString(),
+endt:end.toLocaleTimeString()
+});
+
+save();
+startTime=null;
+render();
+}
+
+function enrich(){
+let map={};
+return sessions.map(s=>{
+let w=week(s.d);
+if(!map[w])map[w]=0;
+
+let remaining=35-map[w];
+let n=Math.min(remaining,s.h);
+let o=Math.max(0,s.h-n);
+
+map[w]+=s.h;
+return {...s,n,o};
+});
+}
+
+function render(){
+let data=enrich();
+
+let th=data.reduce((a,b)=>a+b.h,0);
+let tn=data.reduce((a,b)=>a+b.n,0);
+let to=data.reduce((a,b)=>a+b.o,0);
+
+document.getElementById('total').innerHTML=
+"Total "+th.toFixed(2)+"h | N:"+tn.toFixed(2)+" HS:"+to.toFixed(2);
+
+document.getElementById('list').innerHTML=
+data.map(s=>`<li>${s.start} → ${s.endt} ${s.h.toFixed(2)}h (N:${s.n.toFixed(2)} HS:${s.o.toFixed(2)})</li>`).join('');
+}
+
+render();
+</script>
+
+</body>
+</html>
